@@ -10,12 +10,14 @@ import {
   Clock3,
 } from "lucide-vue-next";
 
-import { getPackages } from "../../utils/storage";
+import { subscribePackages } from "../../utils/firebaseStorage";
 
+// Data paket dari Firebase
 const packages = ref([]);
+let unsubscribePackages = null;
 
+// Waktu otomatis
 const currentDate = ref(new Date());
-
 let clockInterval = null;
 
 const formattedDate = computed(() => {
@@ -40,30 +42,37 @@ function updateClock() {
   currentDate.value = new Date();
 }
 
-function loadPackages() {
-  packages.value = getPackages();
-}
+// Total paket yang masih tersimpan
+const totalPackages = computed(
+  () => packages.value.filter((item) => item.status === "Tersimpan").length,
+);
 
-const totalPackages = computed(() => packages.value.length);
-
+// Jumlah paket yang masih tersimpan
 const storedCount = computed(
   () => packages.value.filter((item) => item.status === "Tersimpan").length,
 );
 
+// Jumlah paket yang sudah diambil
 const pickedCount = computed(
   () => packages.value.filter((item) => item.status === "Diambil").length,
 );
 
+// Memantau data Firebase secara real-time
 onMounted(() => {
-  loadPackages();
-  window.addEventListener("packages-updated", loadPackages);
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
 
   updateClock();
   clockInterval = setInterval(updateClock, 1000);
 });
 
+// Menghentikan pemantauan ketika halaman ditinggalkan
 onUnmounted(() => {
-  window.removeEventListener("packages-updated", loadPackages);
+  if (unsubscribePackages) {
+    unsubscribePackages();
+  }
+
   clearInterval(clockInterval);
 });
 </script>

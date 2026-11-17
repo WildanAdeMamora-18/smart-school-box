@@ -266,18 +266,6 @@
             Lokasi penyimpanan:
             <strong class="text-slate-800"> Kotak Penyimpanan Utama </strong>
           </p>
-
-          <div class="border-t border-slate-100 pt-3">
-            <p class="text-sm text-slate-600">OTP simulasi:</p>
-            <strong class="text-2xl text-blue-700 tracking-widest">
-              {{ savedPackage.otp }}
-            </strong>
-          </div>
-
-          <p class="text-xs text-slate-500">
-            Kode ini digunakan untuk pengujian pengambilan paket. Pada sistem
-            sebenarnya, OTP harus dikirim secara privat kepada penerima.
-          </p>
         </div>
 
         <RouterLink
@@ -294,12 +282,13 @@
 <script setup>
 import { reactive, ref, computed, onMounted, onUnmounted } from "vue";
 import { Clock3 } from "lucide-vue-next";
-import { addPackage } from "../../utils/storage";
+import { addPackage } from "../../utils/firebaseStorage";
 
 const errorMessage = ref("");
 const savedPackage = ref(null);
 const loading = ref(false);
 
+// Waktu otomatis
 const currentDate = ref(new Date());
 let clockInterval = null;
 
@@ -334,6 +323,7 @@ onUnmounted(() => {
   clearInterval(clockInterval);
 });
 
+// Form input
 const form = reactive({
   trackingNumber: "",
   courier: "",
@@ -342,40 +332,38 @@ const form = reactive({
   recipientRoom: "",
 });
 
-function generateOTP() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
+// Reset form
 function resetForm() {
   form.trackingNumber = "";
   form.courier = "";
   form.recipientName = "";
   form.recipientPhone = "";
   form.recipientRoom = "";
-
   errorMessage.value = "";
 }
 
-function submitPackage() {
+// Menyimpan paket ke Firebase tanpa membuat OTP
+async function submitPackage() {
   errorMessage.value = "";
   savedPackage.value = null;
-
   loading.value = true;
 
   try {
-    const newPackage = addPackage({
+    const newPackage = await addPackage({
       trackingNumber: form.trackingNumber,
       courier: form.courier,
       recipientName: form.recipientName,
       recipientPhone: form.recipientPhone,
       recipientRoom: form.recipientRoom,
-      otp: generateOTP(),
     });
 
     savedPackage.value = newPackage;
     resetForm();
+
+    console.log("Paket berhasil disimpan ke Firebase:", newPackage);
   } catch (error) {
-    errorMessage.value = error.message || "Gagal menyimpan paket.";
+    console.error("Gagal menyimpan paket:", error);
+    errorMessage.value = error.message || "Gagal menyimpan paket ke Firebase.";
   } finally {
     loading.value = false;
   }

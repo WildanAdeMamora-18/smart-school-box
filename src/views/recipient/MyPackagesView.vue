@@ -9,21 +9,32 @@ import {
   Clock3,
 } from "lucide-vue-next";
 
-import { getPackages } from "../../utils/storage";
+import { subscribePackages } from "../../utils/firebaseStorage";
 
 const searchQuery = ref("");
 const packages = ref([]);
 
-function loadPackages() {
-  packages.value = getPackages();
-}
+let unsubscribePackages = null;
+
+// Mengambil dan memantau data paket dari Firebase secara real-time
+onMounted(() => {
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
+});
+
+// Menghentikan pemantauan ketika halaman ditinggalkan
+onUnmounted(() => {
+  if (unsubscribePackages) {
+    unsubscribePackages();
+  }
+});
 
 function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
 }
 
-// Semua paket ditampilkan jika kolom pencarian kosong.
-// Jika diisi, pencarian berdasarkan nama atau nomor HP penerima.
+// Menampilkan semua paket dan menyediakan pencarian
 const filteredPackages = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const phoneQuery = normalizePhone(query);
@@ -33,6 +44,7 @@ const filteredPackages = computed(() => {
       if (!query) return true;
 
       const recipientName = String(item.recipientName || "").toLowerCase();
+
       const recipientPhone = normalizePhone(item.recipientPhone);
 
       return (
@@ -43,14 +55,7 @@ const filteredPackages = computed(() => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 });
 
-const storedCount = computed(
-  () => packages.value.filter((item) => item.status === "Tersimpan").length,
-);
-
-const pickedCount = computed(
-  () => packages.value.filter((item) => item.status === "Diambil").length,
-);
-
+// Format tanggal dan waktu paket
 function formatDate(date) {
   if (!date) return "-";
 
@@ -62,15 +67,6 @@ function formatDate(date) {
     minute: "2-digit",
   });
 }
-
-onMounted(() => {
-  loadPackages();
-  window.addEventListener("packages-updated", loadPackages);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("packages-updated", loadPackages);
-});
 </script>
 
 <template>

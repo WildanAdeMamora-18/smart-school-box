@@ -1,10 +1,13 @@
-
 <template>
   <div class="min-h-screen bg-slate-50">
     <header class="bg-white border-b border-slate-200">
-      <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div
+        class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center"
+      >
         <RouterLink to="/recipient" class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
+          <div
+            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold"
+          >
             SP
           </div>
           <div>
@@ -13,7 +16,10 @@
           </div>
         </RouterLink>
 
-        <RouterLink to="/recipient/packages" class="text-sm text-slate-500 hover:text-blue-600">
+        <RouterLink
+          to="/recipient/packages"
+          class="text-sm text-slate-500 hover:text-blue-600"
+        >
           Kembali ke Paket Saya
         </RouterLink>
       </div>
@@ -28,11 +34,16 @@
         </p>
       </div>
 
-      <div v-if="item" class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      <div
+        v-if="item"
+        class="bg-white border border-slate-200 rounded-2xl overflow-hidden"
+      >
         <div class="bg-blue-600 text-white p-6">
           <p class="text-sm text-blue-100">Nomor Resi</p>
           <h3 class="text-2xl font-bold mt-1">{{ item.trackingNumber }}</h3>
-          <span class="inline-block mt-4 bg-white/20 rounded-full px-3 py-1 text-xs font-semibold">
+          <span
+            class="inline-block mt-4 bg-white/20 rounded-full px-3 py-1 text-xs font-semibold"
+          >
             {{ item.status }}
           </span>
         </div>
@@ -43,19 +54,27 @@
             <div class="grid sm:grid-cols-2 gap-5">
               <div>
                 <p class="text-xs text-slate-400">Ekspedisi</p>
-                <p class="font-medium text-slate-700 mt-1">{{ item.courier }}</p>
+                <p class="font-medium text-slate-700 mt-1">
+                  {{ item.courier }}
+                </p>
               </div>
               <div>
                 <p class="text-xs text-slate-400">Tanggal Diterima Sistem</p>
-                <p class="font-medium text-slate-700 mt-1">{{ formatDate(item.createdAt) }}</p>
+                <p class="font-medium text-slate-700 mt-1">
+                  {{ formatDate(item.createdAt) }}
+                </p>
               </div>
               <div>
                 <p class="text-xs text-slate-400">Nama Penerima</p>
-                <p class="font-medium text-slate-700 mt-1">{{ item.recipientName }}</p>
+                <p class="font-medium text-slate-700 mt-1">
+                  {{ item.recipientName }}
+                </p>
               </div>
               <div>
                 <p class="text-xs text-slate-400">Nomor Kamar / Unit</p>
-                <p class="font-medium text-slate-700 mt-1">{{ item.recipientRoom }}</p>
+                <p class="font-medium text-slate-700 mt-1">
+                  {{ item.recipientRoom }}
+                </p>
               </div>
             </div>
           </div>
@@ -64,11 +83,15 @@
             <h4 class="font-bold text-slate-800 mb-3">Lokasi Penyimpanan</h4>
             <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
               <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-2xl">
+                <div
+                  class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-2xl"
+                >
                   📦
                 </div>
                 <div>
-                  <p class="font-semibold text-blue-800">Kotak Penyimpanan Utama</p>
+                  <p class="font-semibold text-blue-800">
+                    Kotak Penyimpanan Utama
+                  </p>
                   <p class="text-xs text-blue-600 mt-1">
                     Paket disimpan di dalam satu kotak penyimpanan.
                   </p>
@@ -77,10 +100,14 @@
             </div>
           </div>
 
-          <div v-if="item.status === 'Tersimpan'" class="border-t border-slate-100 pt-5">
+          <div
+            v-if="item.status === 'Tersimpan'"
+            class="border-t border-slate-100 pt-5"
+          >
             <h4 class="font-bold text-slate-800">Pengambilan Paket</h4>
             <p class="text-sm text-slate-500 mt-2">
-              Gunakan kode OTP yang diberikan kepada Anda untuk melanjutkan pengambilan paket.
+              Gunakan kode OTP yang diberikan kepada Anda untuk melanjutkan
+              pengambilan paket.
             </p>
             <RouterLink
               :to="`/recipient/packages/${item.id}/pickup`"
@@ -98,13 +125,19 @@
         </div>
       </div>
 
-      <div v-else class="bg-white border border-slate-200 rounded-2xl p-10 text-center">
+      <div
+        v-else
+        class="bg-white border border-slate-200 rounded-2xl p-10 text-center"
+      >
         <div class="text-4xl mb-3">🔎</div>
         <h3 class="font-bold text-slate-800">Paket tidak ditemukan</h3>
         <p class="text-sm text-slate-500 mt-2">
           Data paket mungkin sudah tidak tersedia.
         </p>
-        <RouterLink to="/recipient/packages" class="inline-block mt-5 text-blue-600 font-semibold text-sm">
+        <RouterLink
+          to="/recipient/packages"
+          class="inline-block mt-5 text-blue-600 font-semibold text-sm"
+        >
           Kembali ke Paket Saya
         </RouterLink>
       </div>
@@ -113,21 +146,46 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { getPackages } from '../../utils/storage'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { RouterLink, useRoute } from "vue-router";
 
-const route = useRoute()
+import { subscribePackages } from "../../utils/firebaseStorage";
 
+const route = useRoute();
+
+// Menyimpan seluruh data paket dari Firebase
+const packages = ref([]);
+
+// Menyimpan fungsi untuk menghentikan listener
+let unsubscribePackages = null;
+
+// Mengambil paket berdasarkan ID dari URL
 const item = computed(() => {
-  return getPackages().find((pkg) => pkg.id === route.params.id)
-})
+  return packages.value.find((pkg) => pkg.id === route.params.id);
+});
 
+// Format tanggal
 function formatDate(date) {
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
+  if (!date) return "-";
+
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
+
+// Memantau perubahan data paket dari Firebase
+onMounted(() => {
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
+});
+
+// Menghentikan listener saat meninggalkan halaman
+onUnmounted(() => {
+  if (unsubscribePackages) {
+    unsubscribePackages();
+  }
+});
 </script>

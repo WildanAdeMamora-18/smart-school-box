@@ -126,17 +126,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { getPackages } from "../../utils/storage";
+import { subscribePackages } from "../../utils/firebaseStorage";
 
 const packages = ref([]);
 const search = ref("");
-
-function loadPackages() {
-  packages.value = getPackages();
-}
+let unsubscribePackages = null;
 
 const filteredPackages = computed(() => {
-  const keyword = search.value.toLowerCase();
+  const keyword = search.value.toLowerCase().trim();
 
   return packages.value.filter(
     (item) =>
@@ -161,11 +158,14 @@ function formatDate(date) {
 }
 
 onMounted(() => {
-  loadPackages();
-  window.addEventListener("packages-updated", loadPackages);
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
 });
 
 onUnmounted(() => {
-  window.removeEventListener("packages-updated", loadPackages);
+  if (unsubscribePackages) {
+    unsubscribePackages();
+  }
 });
 </script>

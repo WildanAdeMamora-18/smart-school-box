@@ -93,56 +93,90 @@
         </div>
 
         <!-- FORM OTP -->
+
+        <!-- PROSES PERMINTAAN OTP -->
         <div v-else-if="item.status === 'Tersimpan'">
-          <label class="block text-sm font-medium text-slate-700 mb-2">
-            Masukkan 6 Digit Kode OTP
-          </label>
+          <!-- Sebelum meminta OTP -->
+          <div v-if="!otpRequested" class="text-center">
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-5">
+              <div class="text-3xl mb-3">🔐</div>
 
-          <input
-            v-model.trim="otpInput"
-            type="text"
-            inputmode="numeric"
-            maxlength="6"
-            placeholder="Contoh: 123456"
-            class="w-full border border-slate-300 rounded-xl px-4 py-4 text-center text-2xl tracking-[0.5em] font-bold focus:border-blue-500 focus:outline-none"
-            @input="otpInput = otpInput.replace(/[^0-9]/g, '')"
-          />
+              <h3 class="font-bold text-slate-800">
+                Kode OTP Pengambilan Paket
+              </h3>
 
-          <!-- NOTIFIKASI GAGAL -->
-          <div
-            v-if="errorMessage"
-            role="alert"
-            class="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4"
-          >
-            <span class="text-xl">❌</span>
-
-            <div>
-              <p class="font-bold text-red-700">Pengambilan Paket Gagal</p>
-
-              <p class="mt-1 text-sm text-red-600">
-                {{ errorMessage }}
+              <p class="text-sm text-slate-500 mt-2">
+                Tekan tombol di bawah untuk mendapatkan kode OTP. Masukkan kode
+                tersebut melalui keypad pada kotak Smart Parcel Box.
               </p>
             </div>
+
+            <div
+              v-if="errorMessage"
+              role="alert"
+              class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-left text-sm text-red-600"
+            >
+              {{ errorMessage }}
+            </div>
+
+            <button
+              @click="requestOTP"
+              :disabled="otpLoading"
+              class="w-full bg-blue-600 text-white rounded-xl py-3 mt-6 font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition"
+            >
+              {{ otpLoading ? "Membuat Kode OTP..." : "Minta Kode OTP" }}
+            </button>
           </div>
 
-          <!-- Catatan Simulasi -->
-          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-5">
-            <p class="text-xs text-amber-800 leading-5">
-              <strong>Catatan simulasi:</strong>
-              Pada versi pengembangan ini, OTP belum dikirim melalui SMS atau
-              WhatsApp. Gunakan kode uji yang tersedia pada data paket untuk
-              melakukan pengujian.
-            </p>
-          </div>
+          <!-- Setelah OTP dibuat -->
+          <div v-else>
+            <div
+              class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center"
+            >
+              <div class="text-3xl mb-3">🔑</div>
 
-          <!-- Tombol Verifikasi -->
-          <button
-            @click="verifyOTP"
-            :disabled="loading"
-            class="w-full bg-blue-600 text-white rounded-xl py-3 mt-6 font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition"
-          >
-            {{ loading ? "Memproses..." : "Verifikasi dan Ambil Paket" }}
-          </button>
+              <h3 class="font-bold text-emerald-800">
+                Kode OTP Berhasil Dibuat
+              </h3>
+
+              <p class="text-sm text-emerald-700 mt-2">
+                Masukkan kode berikut melalui keypad fisik pada kotak Smart
+                Parcel Box.
+              </p>
+
+              <h2
+                class="text-4xl font-bold tracking-[0.4em] text-emerald-700 mt-5"
+              >
+                {{ generatedOTP }}
+              </h2>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-5">
+              <div class="flex items-start gap-3">
+                <span class="text-xl">ℹ️</span>
+
+                <div>
+                  <p class="font-semibold text-blue-800 text-sm">
+                    Menunggu Verifikasi dari Kotak
+                  </p>
+
+                  <p class="text-xs text-blue-700 mt-1 leading-5">
+                    Silakan menuju kotak Smart Parcel Box dan masukkan kode OTP
+                    melalui keypad. Kotak akan terbuka apabila kode yang
+                    dimasukkan benar.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="errorMessage"
+              role="alert"
+              class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600"
+            >
+              {{ errorMessage }}
+            </div>
+          </div>
         </div>
 
         <!-- PAKET SUDAH DIAMBIL -->
@@ -189,70 +223,98 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { getPackages, updatePackage } from "../../utils/storage";
+
+import { subscribePackages, updatePackage } from "../../utils/firebaseStorage";
 
 const route = useRoute();
 
-const otpInput = ref("");
+const generatedOTP = ref("");
+const otpRequested = ref(false);
+const otpLoading = ref(false);
+
 const errorMessage = ref("");
 const successMessage = ref("");
-const loading = ref(false);
 
+const packages = ref([]);
+let unsubscribePackages = null;
+
+// Mencari paket berdasarkan ID URL
 const item = computed(() => {
-  return getPackages().find((pkg) => pkg.id === route.params.id);
+  return packages.value.find((pkg) => pkg.id === route.params.id);
 });
 
-function verifyOTP() {
-  errorMessage.value = "";
-  successMessage.value = "";
+// Mendengarkan perubahan data Firebase
+onMounted(() => {
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
+});
 
-  // Validasi format OTP
-  if (!/^[0-9]{6}$/.test(otpInput.value)) {
-    errorMessage.value = "Masukkan kode OTP yang terdiri dari 6 digit.";
-    return;
+// Menghentikan listener ketika halaman ditinggalkan
+onUnmounted(() => {
+  if (unsubscribePackages) {
+    unsubscribePackages();
   }
+});
+
+// Menampilkan notifikasi ketika perangkat IoT
+// berhasil memverifikasi OTP dan memperbarui status paket
+watch(
+  item,
+  (currentPackage) => {
+    if (currentPackage?.status === "Diambil") {
+      successMessage.value =
+        "OTP berhasil diverifikasi oleh kotak Smart Parcel Box. Paket Anda berhasil diambil.";
+    }
+  },
+  { immediate: true },
+);
+
+// Membuat OTP 6 digit
+function generateOTP() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// Meminta OTP dari sistem
+async function requestOTP() {
+  errorMessage.value = "";
 
   const currentPackage = item.value;
 
-  // Periksa data paket
   if (!currentPackage) {
     errorMessage.value = "Data paket tidak ditemukan.";
     return;
   }
 
-  // Periksa status paket
   if (currentPackage.status !== "Tersimpan") {
     errorMessage.value = "Paket ini sudah pernah diambil.";
     return;
   }
 
-  // Periksa kesesuaian OTP
-  if (otpInput.value !== String(currentPackage.otp)) {
-    errorMessage.value = "Kode OTP tidak sesuai. Silakan coba kembali.";
-    return;
-  }
-
-  // Proses pengambilan paket
-  loading.value = true;
+  otpLoading.value = true;
 
   try {
-    updatePackage(currentPackage.id, {
-      status: "Diambil",
-      pickedAt: new Date().toISOString(),
+    const newOTP = generateOTP();
+
+    // Menyimpan OTP ke Firebase
+    await updatePackage(currentPackage.id, {
+      otp: newOTP,
+      otpCreatedAt: new Date().toISOString(),
+      otpVerified: false,
     });
 
-    // Tampilkan notifikasi berhasil
-    successMessage.value =
-      "Verifikasi OTP berhasil. Terima kasih telah mengambil paket Anda.";
+    generatedOTP.value = newOTP;
+    otpRequested.value = true;
 
-    otpInput.value = "";
+    console.log("OTP berhasil dibuat.");
   } catch (error) {
-    errorMessage.value =
-      "Terjadi kesalahan saat memproses pengambilan paket. Silakan coba kembali.";
+    console.error("Gagal membuat OTP:", error);
+
+    errorMessage.value = "Gagal membuat kode OTP. Silakan coba kembali.";
   } finally {
-    loading.value = false;
+    otpLoading.value = false;
   }
 }
 </script>

@@ -1,7 +1,6 @@
-
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { RouterLink } from "vue-router";
 import {
   History,
   Search,
@@ -9,84 +8,133 @@ import {
   Package,
   CheckCircle2,
   Clock3,
-} from 'lucide-vue-next'
+} from "lucide-vue-next";
 
-import { getPackages } from '../../utils/storage'
+import { subscribePackages } from "../../utils/firebaseStorage";
 
-const searchQuery = ref('')
-const packages = ref([])
+const searchQuery = ref("");
+const packages = ref([]);
 
-function loadPackages() {
-  packages.value = getPackages()
-}
+// Menyimpan fungsi untuk menghentikan listener Firebase
+let unsubscribePackages = null;
 
 function normalizePhone(value) {
-  return String(value || '').replace(/\D/g, '')
+  return String(value || "").replace(/\D/g, "");
 }
 
 // Riwayat seluruh paket ditampilkan secara langsung.
 // Pencarian dapat dilakukan berdasarkan nama atau nomor HP.
 const filteredHistory = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  const phoneQuery = normalizePhone(query)
+  const query = searchQuery.value.trim().toLowerCase();
+  const phoneQuery = normalizePhone(query);
 
   return [...packages.value]
     .filter((item) => {
-      if (!query) return true
+      if (!query) return true;
 
-      const recipientName = String(item.recipientName || '').toLowerCase()
-      const recipientPhone = normalizePhone(item.recipientPhone)
+      const recipientName = String(item.recipientName || "").toLowerCase();
+      const recipientPhone = normalizePhone(item.recipientPhone);
 
       return (
         recipientName.includes(query) ||
         (phoneQuery && recipientPhone.includes(phoneQuery))
-      )
+      );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.pickedAt || a.createdAt)
-      const dateB = new Date(b.pickedAt || b.createdAt)
+      const dateA = new Date(a.pickedAt || a.createdAt);
+      const dateB = new Date(b.pickedAt || b.createdAt);
 
-      return dateB - dateA
-    })
-})
+      return dateB - dateA;
+    });
+});
 
-const totalPackages = computed(() => packages.value.length)
+// Mengelompokkan riwayat berdasarkan hari dan tanggal
+const groupedHistory = computed(() => {
+  const groups = {};
 
-const pickedPackages = computed(() =>
-  packages.value.filter((item) => item.status === 'Diambil').length
-)
+  filteredHistory.value.forEach((item) => {
+    // Menggunakan tanggal aktivitas terakhir paket
+    const activityDate = item.pickedAt || item.createdAt;
 
-const storedPackages = computed(() =>
-  packages.value.filter((item) => item.status === 'Tersimpan').length
-)
+    const date = activityDate ? new Date(activityDate) : new Date(0);
 
-function formatDate(date) {
-  if (!date) return '-'
+    // Membuat kunci tanggal YYYY-MM-DD berdasarkan waktu lokal
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const dateKey = `${year}-${month}-${day}`;
 
-  return new Date(date).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+    if (!groups[dateKey]) {
+      groups[dateKey] = {
+        date: date,
+        items: [],
+      };
+    }
+
+    groups[dateKey].items.push(item);
+  });
+
+  return Object.entries(groups).map(([key, value]) => ({
+    key,
+    date: value.date,
+    items: value.items,
+  }));
+});
+
+// Format hari dan tanggal untuk pembatas riwayat
+function formatGroupDate(date) {
+  return date.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
-onMounted(() => {
-  loadPackages()
-  window.addEventListener('packages-updated', loadPackages)
-})
+const totalPackages = computed(() => packages.value.length);
 
+const pickedPackages = computed(
+  () => packages.value.filter((item) => item.status === "Diambil").length,
+);
+
+const storedPackages = computed(
+  () => packages.value.filter((item) => item.status === "Tersimpan").length,
+);
+
+function formatDate(date) {
+  if (!date) return "-";
+
+  return new Date(date).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Mengambil dan memantau data paket dari Firebase
+onMounted(() => {
+  unsubscribePackages = subscribePackages((data) => {
+    packages.value = data;
+  });
+});
+
+// Menghentikan listener ketika halaman ditinggalkan
 onUnmounted(() => {
-  window.removeEventListener('packages-updated', loadPackages)
-})
+  if (unsubscribePackages) {
+    unsubscribePackages();
+  }
+});
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50">
     <!-- Header -->
     <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+      <div
+        class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4"
+      >
         <div class="flex items-center gap-3">
           <div class="rounded-xl bg-blue-600 p-2.5 text-white">
             <Package :size="24" />
@@ -149,7 +197,8 @@ onUnmounted(() => {
 
         <div class="mb-4 flex items-center justify-between">
           <p class="text-sm text-slate-500">
-            Menampilkan {{ filteredHistory.length }} dari {{ packages.length }} riwayat
+            Menampilkan {{ filteredHistory.length }} dari
+            {{ packages.length }} riwayat
           </p>
 
           <button
@@ -162,113 +211,129 @@ onUnmounted(() => {
         </div>
 
         <!-- Belum ada riwayat -->
-        <div
-          v-if="packages.length === 0"
-          class="py-12 text-center"
-        >
+        <div v-if="packages.length === 0" class="py-12 text-center">
           <History :size="38" class="mx-auto mb-3 text-slate-300" />
-          <h4 class="font-semibold text-slate-700">
-            Belum ada riwayat paket
-          </h4>
+          <h4 class="font-semibold text-slate-700">Belum ada riwayat paket</h4>
           <p class="mt-1 text-sm text-slate-500">
             Aktivitas paket akan ditampilkan setelah kurir mendaftarkan paket.
           </p>
         </div>
 
         <!-- Pencarian tidak menemukan hasil -->
-        <div
-          v-else-if="filteredHistory.length === 0"
-          class="py-12 text-center"
-        >
+        <div v-else-if="filteredHistory.length === 0" class="py-12 text-center">
           <Search :size="38" class="mx-auto mb-3 text-slate-300" />
-          <h4 class="font-semibold text-slate-700">
-            Riwayat tidak ditemukan
-          </h4>
+          <h4 class="font-semibold text-slate-700">Riwayat tidak ditemukan</h4>
           <p class="mt-1 text-sm text-slate-500">
             Coba gunakan nama atau nomor HP penerima yang berbeda.
           </p>
         </div>
 
         <!-- Daftar riwayat -->
-        <div v-else class="space-y-5">
-          <article
-            v-for="item in filteredHistory"
-            :key="item.id"
-            class="rounded-xl border border-slate-200 p-5"
+        <div v-else class="space-y-7">
+          <div
+            v-for="group in groupedHistory"
+            :key="group.key"
+            class="space-y-4"
           >
-            <div class="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <p class="text-xs text-slate-400">Nomor Resi</p>
-                <h4 class="mt-1 font-bold text-slate-800">
-                  {{ item.trackingNumber }}
-                </h4>
-
-                <p class="mt-2 text-sm font-semibold text-slate-700">
-                  {{ item.recipientName }}
-                </p>
-                <p class="mt-1 text-sm text-slate-500">
-                  {{ item.recipientPhone }}
-                </p>
-                <p class="mt-1 text-sm text-slate-500">
-                  {{ item.courier }} · Kotak Penyimpanan Utama
-                </p>
-              </div>
+            <!-- Pembatas hari dan tanggal -->
+            <div class="flex items-center gap-3">
+              <div class="h-px flex-1 bg-slate-200"></div>
 
               <span
-                class="w-fit rounded-full px-3 py-1.5 text-xs font-semibold"
-                :class="
-                  item.status === 'Diambil'
-                    ? 'bg-green-50 text-green-700'
-                    : 'bg-blue-50 text-blue-700'
-                "
+                class="shrink-0 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 capitalize"
               >
-                {{ item.status }}
+                {{ formatGroupDate(group.date) }}
               </span>
+
+              <div class="h-px flex-1 bg-slate-200"></div>
             </div>
 
-            <!-- Catatan aktivitas -->
-            <div class="space-y-3 border-t border-slate-100 pt-4">
-              <div class="flex items-start gap-3">
-                <div class="rounded-lg bg-blue-50 p-2 text-blue-600">
-                  <Package :size="17" />
-                </div>
-                <div>
-                  <p class="text-sm font-semibold text-slate-700">
-                    Paket dimasukkan
-                  </p>
-                  <p class="mt-1 text-xs text-slate-500">
-                    {{ formatDate(item.createdAt) }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-3">
-                <div class="rounded-lg bg-green-50 p-2 text-green-600">
-                  <CheckCircle2 :size="17" />
-                </div>
-                <div>
-                  <p class="text-sm font-semibold text-slate-700">
-                    {{ item.status === 'Diambil' ? 'Paket diambil' : 'Menunggu pengambilan' }}
-                  </p>
-                  <p class="mt-1 text-xs text-slate-500">
-                    {{
-                      item.pickedAt
-                        ? formatDate(item.pickedAt)
-                        : 'Paket belum diambil oleh penerima.'
-                    }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <RouterLink
-              :to="`/recipient/packages/${item.id}`"
-              class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+            <!-- Daftar paket berdasarkan tanggal -->
+            <article
+              v-for="item in group.items"
+              :key="item.id"
+              class="rounded-xl border border-slate-200 p-5"
             >
-              Lihat Detail Paket
-              <ArrowLeft :size="15" class="rotate-180" />
-            </RouterLink>
-          </article>
+              <div
+                class="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"
+              >
+                <div>
+                  <p class="text-xs text-slate-400">Nomor Resi</p>
+                  <h4 class="mt-1 font-bold text-slate-800">
+                    {{ item.trackingNumber }}
+                  </h4>
+
+                  <p class="mt-2 text-sm font-semibold text-slate-700">
+                    {{ item.recipientName }}
+                  </p>
+                  <p class="mt-1 text-sm text-slate-500">
+                    {{ item.recipientPhone }}
+                  </p>
+                  <p class="mt-1 text-sm text-slate-500">
+                    {{ item.courier }} · Kotak Penyimpanan Utama
+                  </p>
+                </div>
+
+                <span
+                  class="w-fit rounded-full px-3 py-1.5 text-xs font-semibold"
+                  :class="
+                    item.status === 'Diambil'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-blue-50 text-blue-700'
+                  "
+                >
+                  {{ item.status }}
+                </span>
+              </div>
+
+              <!-- Catatan aktivitas -->
+              <div class="space-y-3 border-t border-slate-100 pt-4">
+                <div class="flex items-start gap-3">
+                  <div class="rounded-lg bg-blue-50 p-2 text-blue-600">
+                    <Package :size="17" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-slate-700">
+                      Paket dimasukkan
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                      {{ formatDate(item.createdAt) }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                  <div class="rounded-lg bg-green-50 p-2 text-green-600">
+                    <CheckCircle2 :size="17" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-slate-700">
+                      {{
+                        item.status === "Diambil"
+                          ? "Paket diambil"
+                          : "Menunggu pengambilan"
+                      }}
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                      {{
+                        item.pickedAt
+                          ? formatDate(item.pickedAt)
+                          : "Paket belum diambil oleh penerima."
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <RouterLink
+                :to="`/recipient/packages/${item.id}`"
+                class="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+              >
+                Lihat Detail Paket
+                <ArrowLeft :size="15" class="rotate-180" />
+              </RouterLink>
+            </article>
+          </div>
         </div>
       </section>
     </main>
