@@ -274,7 +274,7 @@ watch(
 
 // Membuat OTP 6 digit
 function generateOTP() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 // Meminta OTP dari sistem
