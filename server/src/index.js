@@ -16,6 +16,16 @@ app.disable('x-powered-by');
 app.use(cors({ origin: config.webOrigin }));
 app.use(express.json({ limit: '10kb' }));
 
+// Halaman info singkat: server ini hanya API, tampilan web ada di Vite (http://localhost:5173).
+app.get('/', (_req, res) => {
+  res.json({
+    name: 'Smart Parcel Box API',
+    mode: store.mode,
+    health: '/api/health',
+    web: config.webOrigin,
+  });
+});
+
 app.use('/api', metaRouter);
 app.use('/api/packages', packagesRouter);
 app.use('/api', pinsRouter);

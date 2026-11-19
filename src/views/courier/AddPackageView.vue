@@ -5,6 +5,7 @@ import { Camera, Check, ImagePlus, X } from "lucide-vue-next";
 import { createPackage, getMeta, getResidents } from "../../utils/api";
 import { compressImage } from "../../utils/image";
 import { addHistory } from "../../utils/history";
+import LiveClock from "../../components/LiveClock.vue";
 
 const route = useRoute();
 const COURIER_KEY = "parcel:lastCourier";
@@ -134,7 +135,7 @@ function reset() {
       <div class="flex justify-between gap-4 px-4 py-3">
         <dt class="text-muted">Waktu</dt>
         <dd class="font-medium">
-          {{ new Date(done.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) }}
+          {{ new Date(done.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "medium", hour12: false }) }}
         </dd>
       </div>
     </dl>
@@ -159,6 +160,8 @@ function reset() {
       <h1 class="text-2xl font-semibold tracking-tight">Input paket</h1>
       <p v-if="boxId" class="mt-1 text-sm text-muted">Kotak {{ boxId }}</p>
     </div>
+
+    <LiveClock />
 
     <div>
       <label class="label" for="resident">Penerima</label>
