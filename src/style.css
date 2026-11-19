@@ -1,11 +1,57 @@
-
 @import "tailwindcss";
+
+/* Tema gelap diaktifkan lewat class "dark" pada <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f0f0ed;
+  --line: #e3e3de;
+  --fg: #18181b;
+  --muted: #6b6b73;
+  --accent: #0f766e;
+  --accent-fg: #ffffff;
+  --accent-soft: #e4f1ef;
+  --danger: #b42318;
+  --danger-soft: #fdecea;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0e0f11;
+  --surface: #16181b;
+  --surface-2: #1d2024;
+  --line: #2a2d32;
+  --fg: #ececee;
+  --muted: #9a9ca3;
+  --accent: #2dd4bf;
+  --accent-fg: #06201d;
+  --accent-soft: #12302d;
+  --danger: #f97066;
+  --danger-soft: #3a1714;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+}
 
 :root {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #172033;
-  background: #f5f7fb;
+  color: var(--fg);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,7 +69,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -31,12 +78,38 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible,
-input:focus-visible {
-  outline: 2px solid #2563eb;
+:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 
 #app {
   min-height: 100vh;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-medium transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-accent-fg hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply border border-line bg-surface text-fg hover:bg-surface-2;
+  }
+  .field {
+    @apply h-12 w-full rounded-xl border border-line bg-surface px-4 text-[15px] text-fg outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/25;
+  }
+  .label {
+    @apply mb-2 block text-sm font-medium text-fg;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }

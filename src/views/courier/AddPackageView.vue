@@ -1,371 +1,252 @@
-<template>
-  <div class="min-h-screen bg-slate-50">
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200">
-      <div
-        class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center"
-      >
-        <RouterLink to="/courier" class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold"
-          >
-            SP
-          </div>
-
-          <div>
-            <h1 class="font-bold text-slate-800">Smart Parcel Box</h1>
-            <p class="text-xs text-slate-500">Portal Kurir</p>
-          </div>
-        </RouterLink>
-
-        <RouterLink
-          to="/courier"
-          class="text-sm text-slate-500 hover:text-blue-600"
-        >
-          Kembali ke Beranda
-        </RouterLink>
-      </div>
-    </header>
-
-    <main class="max-w-4xl mx-auto px-6 py-10">
-      <!-- Judul -->
-      <div class="mb-8">
-        <p class="text-sm font-semibold text-blue-600 mb-2">PORTAL KURIR</p>
-        <h2 class="text-3xl font-bold text-slate-900">Input Paket</h2>
-        <p class="text-slate-500 mt-2">
-          Lengkapi informasi paket dan penerima sebelum menyimpan paket.
-        </p>
-      </div>
-
-      <!-- Waktu Penerimaan Paket -->
-      <div class="mb-5 rounded-xl border border-blue-100 bg-blue-50 p-4">
-        <div class="mb-3 flex items-center gap-2 text-blue-700">
-          <Clock3 :size="20" />
-          <h3 class="font-semibold">Waktu Penerimaan Paket</h3>
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label class="mb-1 block text-xs font-medium text-slate-500">
-              Hari dan Tanggal
-            </label>
-            <input
-              type="text"
-              :value="formattedDate"
-              readonly
-              class="w-full rounded-lg border border-blue-100 bg-white px-3 py-2.5 text-sm font-medium text-slate-700"
-            />
-          </div>
-
-          <div>
-            <label class="mb-1 block text-xs font-medium text-slate-500">
-              Waktu
-            </label>
-            <input
-              type="text"
-              :value="formattedTime"
-              readonly
-              class="w-full rounded-lg border border-blue-100 bg-white px-3 py-2.5 text-sm font-medium text-slate-700"
-            />
-          </div>
-        </div>
-
-        <p class="mt-2 text-xs text-blue-600">
-          Waktu tercatat otomatis berdasarkan jam perangkat dan tidak dapat
-          diubah.
-        </p>
-      </div>
-
-      <!-- Form Input -->
-      <div class="bg-white border border-slate-200 rounded-2xl p-6 md:p-8">
-        <form @submit.prevent="submitPackage" class="space-y-5">
-          <!-- Informasi Paket -->
-          <div>
-            <h3 class="font-bold text-slate-800 text-lg">Informasi Paket</h3>
-            <p class="text-sm text-slate-500 mt-1">
-              Masukkan identitas paket yang dikirim.
-            </p>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Nomor Resi
-              </label>
-              <input
-                v-model.trim="form.trackingNumber"
-                type="text"
-                placeholder="Contoh: JNE123456789"
-                required
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Ekspedisi
-              </label>
-              <select
-                v-model="form.courier"
-                required
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm bg-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="" disabled>Pilih ekspedisi</option>
-                <option>JNE</option>
-                <option>J&T Express</option>
-                <option>SiCepat</option>
-                <option>Pos Indonesia</option>
-                <option>AnterAja</option>
-                <option>SPX Express</option>
-                <option>Lainnya</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Informasi Penerima -->
-          <div class="border-t border-slate-100 pt-5">
-            <h3 class="font-bold text-slate-800 text-lg">Informasi Penerima</h3>
-            <p class="text-sm text-slate-500 mt-1">
-              Masukkan identitas orang yang menerima paket.
-            </p>
-          </div>
-
-          <div class="grid md:grid-cols-2 gap-5">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Nama Penerima
-              </label>
-              <input
-                v-model.trim="form.recipientName"
-                type="text"
-                placeholder="Nama lengkap penerima"
-                required
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Nomor HP Penerima
-              </label>
-              <input
-                v-model.trim="form.recipientPhone"
-                type="tel"
-                placeholder="Contoh: 081234567890"
-                required
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">
-                Nomor Kamar / Unit
-              </label>
-              <input
-                v-model.trim="form.recipientRoom"
-                type="text"
-                placeholder="Contoh: Kamar 203"
-                required
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <!-- Informasi Penyimpanan -->
-          <div class="border-t border-slate-100 pt-5">
-            <h3 class="font-bold text-slate-800 text-lg">Penyimpanan Paket</h3>
-            <p class="text-sm text-slate-500 mt-1">
-              Paket akan disimpan di dalam satu kotak Smart Parcel Box.
-            </p>
-          </div>
-
-          <div class="rounded-xl border border-blue-100 bg-blue-50 p-4">
-            <div class="flex items-center gap-3">
-              <div
-                class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center text-2xl"
-              >
-                📦
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800">
-                  Kotak Penyimpanan Utama
-                </p>
-                <p class="text-sm text-slate-600">
-                  Semua paket disimpan dalam satu kotak penyimpanan.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notifikasi Gagal -->
-          <div
-            v-if="errorMessage"
-            role="alert"
-            class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4"
-          >
-            <span class="text-xl">❌</span>
-            <div>
-              <p class="font-bold">Paket Gagal Disimpan</p>
-              <p class="text-sm mt-1">{{ errorMessage }}</p>
-            </div>
-          </div>
-
-          <!-- Tombol -->
-          <div class="flex flex-col sm:flex-row gap-3 pt-3">
-            <button
-              type="submit"
-              :disabled="loading"
-              class="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 transition"
-            >
-              {{ loading ? "Menyimpan..." : "Simpan Paket" }}
-            </button>
-
-            <button
-              type="button"
-              @click="resetForm"
-              class="border border-slate-300 text-slate-600 px-6 py-3 rounded-xl font-semibold text-sm hover:bg-slate-50 transition"
-            >
-              Reset Form
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Notifikasi Berhasil -->
-      <div
-        v-if="savedPackage"
-        role="status"
-        class="mt-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-6"
-      >
-        <div class="flex items-center gap-3 mb-4">
-          <span class="text-3xl">✅</span>
-          <div>
-            <h3 class="font-bold text-emerald-800">Paket Berhasil Disimpan!</h3>
-            <p class="text-sm text-emerald-700 mt-1">
-              Data paket berhasil dicatat ke dalam sistem.
-            </p>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl p-4 space-y-3">
-          <p class="text-sm text-slate-600">
-            Nomor resi:
-            <strong class="text-slate-800">
-              {{ savedPackage.trackingNumber }}
-            </strong>
-          </p>
-
-          <p class="text-sm text-slate-600">
-            Penerima:
-            <strong class="text-slate-800">
-              {{ savedPackage.recipientName }}
-            </strong>
-          </p>
-
-          <p class="text-sm text-slate-600">
-            Lokasi penyimpanan:
-            <strong class="text-slate-800"> Kotak Penyimpanan Utama </strong>
-          </p>
-        </div>
-
-        <RouterLink
-          to="/courier/packages"
-          class="inline-block mt-4 text-sm font-semibold text-emerald-800 underline"
-        >
-          Lihat daftar paket
-        </RouterLink>
-      </div>
-    </main>
-  </div>
-</template>
-
 <script setup>
-import { reactive, ref, computed, onMounted, onUnmounted } from "vue";
-import { Clock3 } from "lucide-vue-next";
-import { addPackage } from "../../utils/firebaseStorage";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { RouterLink, useRoute } from "vue-router";
+import { Camera, Check, ImagePlus, X } from "lucide-vue-next";
+import { createPackage, getMeta, getResidents } from "../../utils/api";
+import { compressImage } from "../../utils/image";
+import { addHistory } from "../../utils/history";
 
-const errorMessage = ref("");
-const savedPackage = ref(null);
-const loading = ref(false);
+const route = useRoute();
+const COURIER_KEY = "parcel:lastCourier";
 
-// Waktu otomatis
-const currentDate = ref(new Date());
-let clockInterval = null;
+const loading = ref(true);
+const loadError = ref("");
+const residents = ref([]);
+const couriers = ref([]);
+const boxId = ref(route.params.boxId || "");
 
-const formattedDate = computed(() => {
-  return currentDate.value.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-});
-
-const formattedTime = computed(() => {
-  return currentDate.value.toLocaleTimeString("id-ID", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
-});
-
-function updateClock() {
-  currentDate.value = new Date();
-}
-
-onMounted(() => {
-  updateClock();
-  clockInterval = setInterval(updateClock, 1000);
-});
-
-onUnmounted(() => {
-  clearInterval(clockInterval);
-});
-
-// Form input
 const form = reactive({
+  residentId: "",
+  courier: localStorage.getItem(COURIER_KEY) || "",
   trackingNumber: "",
-  courier: "",
-  recipientName: "",
-  recipientPhone: "",
-  recipientRoom: "",
 });
 
-// Reset form
-function resetForm() {
-  form.trackingNumber = "";
-  form.courier = "";
-  form.recipientName = "";
-  form.recipientPhone = "";
-  form.recipientRoom = "";
-  errorMessage.value = "";
-}
+const photo = ref(null);
+const photoPreview = ref("");
+const photoBusy = ref(false);
+const submitting = ref(false);
+const error = ref("");
+const done = ref(null);
 
-// Menyimpan paket ke Firebase tanpa membuat OTP
-async function submitPackage() {
-  errorMessage.value = "";
-  savedPackage.value = null;
+const canSubmit = computed(
+  () => form.residentId && form.courier && !submitting.value && !photoBusy.value,
+);
+
+async function load() {
   loading.value = true;
-
+  loadError.value = "";
   try {
-    const newPackage = await addPackage({
-      trackingNumber: form.trackingNumber,
-      courier: form.courier,
-      recipientName: form.recipientName,
-      recipientPhone: form.recipientPhone,
-      recipientRoom: form.recipientRoom,
-    });
-
-    savedPackage.value = newPackage;
-    resetForm();
-
-    console.log("Paket berhasil disimpan ke Firebase:", newPackage);
-  } catch (error) {
-    console.error("Gagal menyimpan paket:", error);
-    errorMessage.value = error.message || "Gagal menyimpan paket ke Firebase.";
+    const [meta, list] = await Promise.all([getMeta(), getResidents()]);
+    couriers.value = meta.couriers;
+    residents.value = list;
+    if (!boxId.value) boxId.value = meta.boxId;
+    if (!couriers.value.includes(form.courier)) form.courier = "";
+  } catch (err) {
+    loadError.value = err.message;
   } finally {
     loading.value = false;
   }
 }
+
+onMounted(load);
+onBeforeUnmount(clearPhoto);
+
+function clearPhoto() {
+  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value);
+  photo.value = null;
+  photoPreview.value = "";
+}
+
+async function onPhoto(event) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  if (!file) return;
+
+  error.value = "";
+  photoBusy.value = true;
+  try {
+    const blob = await compressImage(file);
+    clearPhoto();
+    photo.value = blob;
+    photoPreview.value = URL.createObjectURL(blob);
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    photoBusy.value = false;
+  }
+}
+
+async function submit() {
+  if (!canSubmit.value) return;
+  error.value = "";
+  submitting.value = true;
+
+  try {
+    const body = new FormData();
+    body.append("residentId", form.residentId);
+    body.append("courier", form.courier);
+    body.append("boxId", boxId.value);
+    if (form.trackingNumber.trim()) body.append("trackingNumber", form.trackingNumber.trim());
+    if (photo.value) body.append("photo", photo.value, "photo.jpg");
+
+    const result = await createPackage(body);
+    addHistory(result);
+    localStorage.setItem(COURIER_KEY, form.courier);
+    done.value = result;
+  } catch (err) {
+    error.value = err.message;
+  } finally {
+    submitting.value = false;
+  }
+}
+
+function reset() {
+  done.value = null;
+  form.residentId = "";
+  form.trackingNumber = "";
+  error.value = "";
+  clearPhoto();
+}
 </script>
+
+<template>
+  <!-- Berhasil -->
+  <section v-if="done" class="pt-10 text-center">
+    <div
+      class="mx-auto flex size-14 items-center justify-center rounded-full bg-accent-soft text-accent"
+    >
+      <Check class="size-7" />
+    </div>
+    <h1 class="mt-5 text-2xl font-semibold tracking-tight">Paket tercatat</h1>
+    <p class="mt-2 text-[15px] text-muted">
+      {{ done.resident }} sudah diberi tahu. Silakan masukkan paket ke kotak.
+    </p>
+
+    <dl class="card mt-8 divide-y divide-line text-left text-[15px]">
+      <div class="flex justify-between gap-4 px-4 py-3">
+        <dt class="text-muted">Ekspedisi</dt>
+        <dd class="font-medium">{{ done.courier }}</dd>
+      </div>
+      <div v-if="done.trackingNumber" class="flex justify-between gap-4 px-4 py-3">
+        <dt class="text-muted">Resi</dt>
+        <dd class="font-medium">{{ done.trackingNumber }}</dd>
+      </div>
+      <div class="flex justify-between gap-4 px-4 py-3">
+        <dt class="text-muted">Waktu</dt>
+        <dd class="font-medium">
+          {{ new Date(done.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) }}
+        </dd>
+      </div>
+    </dl>
+
+    <button type="button" class="btn btn-primary mt-6" @click="reset">Input paket lain</button>
+    <RouterLink to="/history" class="btn btn-secondary mt-3">Lihat riwayat</RouterLink>
+  </section>
+
+  <!-- Memuat / gagal memuat -->
+  <section v-else-if="loading" class="pt-16 text-center text-[15px] text-muted">
+    Memuat data…
+  </section>
+
+  <section v-else-if="loadError" class="pt-10">
+    <div class="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{{ loadError }}</div>
+    <button type="button" class="btn btn-secondary mt-4" @click="load">Coba lagi</button>
+  </section>
+
+  <!-- Form -->
+  <form v-else class="space-y-7 pt-4" @submit.prevent="submit">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Input paket</h1>
+      <p v-if="boxId" class="mt-1 text-sm text-muted">Kotak {{ boxId }}</p>
+    </div>
+
+    <div>
+      <label class="label" for="resident">Penerima</label>
+      <select id="resident" v-model="form.residentId" class="field">
+        <option value="" disabled>Pilih nama penghuni</option>
+        <option v-for="r in residents" :key="r.id" :value="r.id">{{ r.label }}</option>
+      </select>
+    </div>
+
+    <div>
+      <span class="label">Ekspedisi</span>
+      <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <button
+          v-for="name in couriers"
+          :key="name"
+          type="button"
+          :aria-pressed="form.courier === name"
+          class="h-12 rounded-xl border px-3 text-sm font-medium transition"
+          :class="
+            form.courier === name
+              ? 'border-accent bg-accent-soft text-accent'
+              : 'border-line bg-surface text-fg hover:bg-surface-2'
+          "
+          @click="form.courier = name"
+        >
+          {{ name }}
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <label class="label" for="tracking">
+        Nomor resi <span class="font-normal text-muted">(opsional)</span>
+      </label>
+      <input
+        id="tracking"
+        v-model="form.trackingNumber"
+        class="field"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        maxlength="40"
+        placeholder="Contoh: JP1234567890"
+      />
+    </div>
+
+    <div>
+      <span class="label">
+        Foto paket <span class="font-normal text-muted">(opsional)</span>
+      </span>
+
+      <div v-if="photoPreview" class="relative overflow-hidden rounded-2xl border border-line">
+        <img :src="photoPreview" alt="Pratinjau foto paket" class="max-h-64 w-full object-cover" />
+        <button
+          type="button"
+          class="absolute right-2 top-2 inline-flex size-9 items-center justify-center rounded-full bg-black/60 text-white"
+          aria-label="Hapus foto"
+          @click="clearPhoto"
+        >
+          <X class="size-4" />
+        </button>
+      </div>
+
+      <div v-else class="grid grid-cols-2 gap-3">
+        <label class="btn btn-secondary cursor-pointer">
+          <Camera class="size-4" />
+          Kamera
+          <input type="file" accept="image/*" capture="environment" class="sr-only" @change="onPhoto" />
+        </label>
+        <label class="btn btn-secondary cursor-pointer">
+          <ImagePlus class="size-4" />
+          Galeri
+          <input type="file" accept="image/*" class="sr-only" @change="onPhoto" />
+        </label>
+      </div>
+      <p v-if="photoBusy" class="mt-2 text-sm text-muted">Memproses foto…</p>
+    </div>
+
+    <div v-if="error" class="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
+      {{ error }}
+    </div>
+
+    <button type="submit" class="btn btn-primary" :disabled="!canSubmit">
+      <span
+        v-if="submitting"
+        class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+      ></span>
+      {{ submitting ? "Menyimpan…" : "Simpan paket" }}
+    </button>
+  </form>
+</template>
