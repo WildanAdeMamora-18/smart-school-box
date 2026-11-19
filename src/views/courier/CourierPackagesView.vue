@@ -1,171 +1,60 @@
-<template>
-  <div class="min-h-screen bg-slate-50">
-    <header class="bg-white border-b border-slate-200">
-      <div
-        class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center"
-      >
-        <RouterLink to="/courier" class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold"
-          >
-            SP
-          </div>
-          <div>
-            <h1 class="font-bold text-slate-800">Smart Parcel Box</h1>
-            <p class="text-xs text-slate-500">Portal Kurir</p>
-          </div>
-        </RouterLink>
-
-        <RouterLink
-          to="/courier"
-          class="text-sm text-slate-500 hover:text-blue-600"
-        >
-          Kembali ke Beranda
-        </RouterLink>
-      </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-6 py-10">
-      <div
-        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8"
-      >
-        <div>
-          <p class="text-sm font-semibold text-blue-600 mb-2">PORTAL KURIR</p>
-          <h2 class="text-3xl font-bold text-slate-900">Paket Terkirim</h2>
-          <p class="text-slate-500 mt-2">
-            Daftar paket yang telah dicatat oleh kurir.
-          </p>
-        </div>
-
-        <RouterLink
-          to="/courier/add-package"
-          class="bg-blue-600 text-white px-5 py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition text-center"
-        >
-          + Input Paket
-        </RouterLink>
-      </div>
-
-      <div class="bg-white border border-slate-200 rounded-2xl p-5 mb-6">
-        <label class="block text-sm font-medium text-slate-700 mb-2">
-          Cari Paket
-        </label>
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Cari nomor resi atau nama penerima..."
-          class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:outline-none"
-        />
-      </div>
-
-      <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div class="p-5 border-b border-slate-100">
-          <h3 class="font-bold text-slate-800">
-            Daftar Paket ({{ filteredPackages.length }})
-          </h3>
-        </div>
-
-        <div v-if="filteredPackages.length" class="overflow-x-auto">
-          <table class="w-full text-sm text-left">
-            <thead class="bg-slate-50 text-slate-500">
-              <tr>
-                <th class="px-5 py-4 font-medium">Nomor Resi</th>
-                <th class="px-5 py-4 font-medium">Penerima</th>
-                <th class="px-5 py-4 font-medium">Ekspedisi</th>
-                <th class="px-5 py-4 font-medium">Status</th>
-                <th class="px-5 py-4 font-medium">Tanggal</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr
-                v-for="item in filteredPackages"
-                :key="item.id"
-                class="border-t border-slate-100"
-              >
-                <td class="px-5 py-4 font-semibold text-slate-800">
-                  {{ item.trackingNumber }}
-                </td>
-                <td class="px-5 py-4 text-slate-600">
-                  <div>{{ item.recipientName }}</div>
-                  <div class="text-xs text-slate-400">
-                    {{ item.recipientRoom }}
-                  </div>
-                </td>
-                <td class="px-5 py-4 text-slate-600">{{ item.courier }}</td>
-                <td class="px-5 py-4">
-                  <span
-                    class="inline-block rounded-full px-3 py-1 text-xs font-medium"
-                    :class="
-                      item.status === 'Tersimpan'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                    "
-                  >
-                    {{ item.status }}
-                  </span>
-                </td>
-                <td class="px-5 py-4 text-slate-500">
-                  {{ formatDate(item.createdAt) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div v-else class="text-center py-14 px-5">
-          <div class="text-4xl mb-3">📦</div>
-          <h3 class="font-semibold text-slate-800">Belum ada paket</h3>
-          <p class="text-sm text-slate-500 mt-2">
-            Paket yang berhasil dicatat akan muncul di sini.
-          </p>
-        </div>
-      </div>
-    </main>
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { subscribePackages } from "../../utils/firebaseStorage";
+import { ref } from "vue";
+import { RouterLink } from "vue-router";
+import { Camera, Package } from "lucide-vue-next";
+import { clearHistory, getHistory } from "../../utils/history";
 
-const packages = ref([]);
-const search = ref("");
-let unsubscribePackages = null;
+const items = ref(getHistory());
 
-const filteredPackages = computed(() => {
-  const keyword = search.value.toLowerCase().trim();
-
-  return packages.value.filter(
-    (item) =>
-      (item.trackingNumber || "").toLowerCase().includes(keyword) ||
-      (item.recipientName || "").toLowerCase().includes(keyword),
-  );
-});
-
-function formatDate(date) {
-  if (!date) return "-";
-
-  return new Date(date).toLocaleString("id-ID", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  });
+function formatDate(iso) {
+  return new Date(iso).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
 }
 
-onMounted(() => {
-  unsubscribePackages = subscribePackages((data) => {
-    packages.value = data;
-  });
-});
-
-onUnmounted(() => {
-  if (unsubscribePackages) {
-    unsubscribePackages();
-  }
-});
+function clearAll() {
+  if (!confirm("Hapus semua riwayat di perangkat ini?")) return;
+  clearHistory();
+  items.value = [];
+}
 </script>
+
+<template>
+  <section class="pt-4">
+    <h1 class="text-2xl font-semibold tracking-tight">Riwayat</h1>
+    <p class="mt-1 text-sm text-muted">Paket yang Anda input dari perangkat ini.</p>
+
+    <div v-if="!items.length" class="mt-14 text-center">
+      <div
+        class="mx-auto flex size-12 items-center justify-center rounded-full bg-surface-2 text-muted"
+      >
+        <Package class="size-6" />
+      </div>
+      <p class="mt-4 text-[15px] text-muted">Belum ada paket yang diinput.</p>
+      <RouterLink to="/drop" class="btn btn-primary mt-6">Input paket</RouterLink>
+    </div>
+
+    <template v-else>
+      <ul class="card mt-6 divide-y divide-line">
+        <li v-for="item in items" :key="item.id" class="flex items-start gap-3 px-4 py-3.5">
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[15px] font-medium">{{ item.resident }}</p>
+            <p class="mt-0.5 truncate text-sm text-muted">
+              {{ item.courier }}<template v-if="item.trackingNumber"> · {{ item.trackingNumber }}</template>
+            </p>
+          </div>
+          <div class="flex shrink-0 flex-col items-end gap-1 text-xs text-muted">
+            <span>{{ formatDate(item.createdAt) }}</span>
+            <Camera v-if="item.hasPhoto" class="size-3.5" />
+          </div>
+        </li>
+      </ul>
+
+      <button
+        type="button"
+        class="mt-6 w-full text-center text-sm text-muted underline-offset-4 hover:text-danger hover:underline"
+        @click="clearAll"
+      >
+        Hapus riwayat
+      </button>
+    </template>
+  </section>
+</template>

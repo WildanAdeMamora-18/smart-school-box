@@ -28,7 +28,7 @@
 
       <div class="grid md:grid-cols-2 gap-5">
         <button
-          @click="goTo('/courier')"
+          @click="goTo('/')"
           class="text-left bg-white border border-slate-200 rounded-2xl p-7 hover:border-blue-500 hover:shadow-lg transition"
         >
           <div

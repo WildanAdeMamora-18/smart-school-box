@@ -1,0 +1,24 @@
+{
+  "name": "smart-parcel-box-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "dev:broker": "node dev/broker.js",
+    "dev:box": "node dev/fake-box.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.5",
+    "firebase-admin": "^14.5.1",
+    "mqtt": "^5.16.1",
+    "multer": "^2.5.0"
+  },
+  "devDependencies": {
+    "aedes": "^1.2.0"
+  }
+}
