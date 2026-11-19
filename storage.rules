@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Foto paket hanya ditulis dan dibaca oleh server (Admin SDK, yang mengabaikan
+// rules ini). Klien menerima URL bertanda tangan dari server, jadi akses
+// langsung dari browser/aplikasi ditolak seluruhnya.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
