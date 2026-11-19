@@ -1,5 +1,31 @@
-# Vue 3 + Vite
+# Smart Parcel Box
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Kotak paket pintar untuk kos: kurir memasukkan paket lewat lubang khusus dan mencatatnya
+di web; penghuni mengambil paket dengan PIN sekali pakai yang diperoleh lewat aplikasi Flutter.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Struktur
+
+| Folder | Isi |
+|---|---|
+| `/` (root) | Web kurir — Vue 3 + Vite + Tailwind |
+| `server/` | Backend Express (rate limit, PIN, MQTT, Firebase Admin) |
+| `firmware/` | Kode ESP32 (menyusul) |
+| `docs/` | Kontrak data/API untuk aplikasi Flutter (menyusul) |
+
+## Menjalankan web
+
+```bash
+cp .env.example .env   # isi konfigurasi web Firebase
+npm install
+npm run dev
+```
+
+## Menjalankan server
+
+```bash
+cd server
+cp .env.example .env   # isi rahasia; file ini tidak boleh di-commit
+npm install
+```
+
+Jangan pernah meng-commit `.env`, service account Firebase, atau kredensial MQTT.
